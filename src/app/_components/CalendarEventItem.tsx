@@ -6,6 +6,8 @@ type CalendarEventItemProps = {
   title: string;
   startTime: string;
   endTime: string;
+  calendarName: string;
+  calendarClassName: string;
   onRename: (newTitle: string) => void;
   onDelete: () => void;
 };
@@ -14,6 +16,8 @@ export function CalendarEventItem({
   title,
   startTime,
   endTime,
+  calendarName,
+  calendarClassName,
   onRename,
   onDelete,
 }: CalendarEventItemProps) {
@@ -72,12 +76,20 @@ export function CalendarEventItem({
   return (
     <div className="flex items-center justify-between rounded-lg border border-gray-200 p-3">
       <div>
-        <p className="font-medium text-gray-800">
+        <div className="flex items-center gap-2">
+          <p className="font-medium text-gray-800">
             {title}
-        </p>
+          </p>
+
+          <span
+            className={`rounded-full px-2 py-1 text-xs font-medium ${calendarClassName}`}
+          >
+            {calendarName}
+          </span>
+        </div>
 
         <p className="mt-1 text-sm text-gray-500">
-            {startTime} – {endTime}
+          {startTime} – {endTime}
         </p>
       </div>
 

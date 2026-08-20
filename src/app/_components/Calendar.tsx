@@ -10,8 +10,32 @@ type CalendarEvent = {
   date: string;
   startTime: string;
   endTime: string;
+  calendarId: string;
 };
 
+type CalendarCategory = {
+  id: string;
+  name: string;
+  eventClassName: string;
+};
+
+const calendars: CalendarCategory[] = [
+  {
+    id: "private",
+    name: "Privat",
+    eventClassName: "bg-emerald-50 text-emerald-700",
+  },
+  {
+    id: "university",
+    name: "Hochschule",
+    eventClassName: "bg-blue-50 text-blue-700",
+  },
+  {
+    id: "work",
+    name: "Arbeit",
+    eventClassName: "bg-red-50 text-red-700",
+  },
+];
 
 export function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -20,6 +44,8 @@ export function Calendar() {
   const [newEventTitle, setNewEventTitle] = useState("");
   const [newEventStartTime, setNewEventStartTime] = useState("09:00");
   const [newEventEndTime, setNewEventEndTime] = useState("10:00");
+  const [newEventCalendarId, setNewEventCalendarId] =
+  useState("private");
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -103,6 +129,7 @@ export function Calendar() {
       date: formatDateKey(selectedDate),
       startTime: newEventStartTime,
       endTime: newEventEndTime,
+      calendarId: newEventCalendarId,
     };
 
     setEvents((currentEvents) => [...currentEvents, newEvent]);
@@ -137,6 +164,13 @@ export function Calendar() {
               calendarEvent.date === formatDateKey(selectedDate),
           )
           .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+  function getCalendarById(calendarId: string) {
+    return (
+      calendars.find((calendar) => calendar.id === calendarId) ??
+      calendars[0]
+    );
+  }
 
   return (
     <div>
@@ -209,13 +243,19 @@ export function Calendar() {
               new Date(year, month, day),
             );
 
-            const eventTitles = events
+            const dayEvents = events
               .filter((event) => event.date === dateKey)
               .sort((a, b) => a.startTime.localeCompare(b.startTime))
-              .map(
-                (event) =>
-                  `${event.startTime} ${event.title}`,
-              );
+              .map((event) => {
+                const calendar = getCalendarById(event.calendarId);
+
+                return {
+                  id: event.id,
+                  label: `${event.startTime} ${event.title}`,
+                  className:
+                    calendar?.eventClassName ?? "bg-gray-50 text-gray-700",
+                };
+              });
 
             return (
               <CalendarDay
@@ -223,7 +263,7 @@ export function Calendar() {
                 day={day}
                 isToday={isToday}
                 isSelected={isSelected}
-                eventTitles={eventTitles}
+                events={dayEvents}
                 onSelect={() => selectDay(day)}
               />
             );
@@ -255,21 +295,30 @@ export function Calendar() {
               </p>
             ) : (
               <div className="space-y-2">
-                {selectedEvents.map((calendarEvent) => (
-                  <CalendarEventItem
-                    key={calendarEvent.id}
-                    title={calendarEvent.title}
-                    startTime={calendarEvent.startTime}
-                    endTime={calendarEvent.endTime}
-                    onRename={(newTitle) =>
-                      renameEvent(calendarEvent.id, newTitle)
-                    }
-                    onDelete={() => deleteEvent(calendarEvent.id)}
-                  />
-                ))}
+                {selectedEvents.map((calendarEvent) => {
+                  const calendar = getCalendarById(calendarEvent.calendarId);
+
+                  return (
+                    <CalendarEventItem
+                      key={calendarEvent.id}
+                      title={calendarEvent.title}
+                      startTime={calendarEvent.startTime}
+                      endTime={calendarEvent.endTime}
+                      calendarName={calendar?.name ?? "Unbekannt"}
+                      calendarClassName={
+                        calendar?.eventClassName ?? "bg-gray-50 text-gray-700"
+                      }
+                      onRename={(newTitle) =>
+                        renameEvent(calendarEvent.id, newTitle)
+                      }
+                      onDelete={() => deleteEvent(calendarEvent.id)}
+                    />
+                  );
+                })}
               </div>
             )}
           </div>
+          {/* Add Event Form */}
           <form
             onSubmit={addEvent}
             className="mt-5 space-y-4"
@@ -281,6 +330,30 @@ export function Calendar() {
               >
                 Titel
               </label>
+              <div>
+                <label
+                  htmlFor="event-calendar"
+                  className="mb-1 block text-sm font-medium text-gray-700"
+                >
+                  Kalender
+                </label>
+
+                <select
+                  id="event-calendar"
+                  value={newEventCalendarId}
+                  onChange={(event) => setNewEventCalendarId(event.target.value)}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2 outline-none focus:border-gray-400"
+                >
+                  {calendars.map((calendar) => (
+                    <option
+                      key={calendar.id}
+                      value={calendar.id}
+                    >
+                      {calendar.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               <input
                 id="event-title"
