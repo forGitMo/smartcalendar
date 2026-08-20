@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { CalendarDay } from "./CalendarDay";
 import { CalendarEventItem } from "./CalendarEventItem";
+import { calendars } from "./calendarData";
 
 type CalendarEvent = {
   id: number;
@@ -13,31 +14,13 @@ type CalendarEvent = {
   calendarId: string;
 };
 
-type CalendarCategory = {
-  id: string;
-  name: string;
-  eventClassName: string;
+type CalendarProps = {
+  visibleCalendarIds: string[];
 };
 
-const calendars: CalendarCategory[] = [
-  {
-    id: "private",
-    name: "Privat",
-    eventClassName: "bg-emerald-50 text-emerald-700",
-  },
-  {
-    id: "university",
-    name: "Hochschule",
-    eventClassName: "bg-blue-50 text-blue-700",
-  },
-  {
-    id: "work",
-    name: "Arbeit",
-    eventClassName: "bg-red-50 text-red-700",
-  },
-];
-
-export function Calendar() {
+export function Calendar({
+  visibleCalendarIds,
+}: CalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -161,9 +144,12 @@ export function Calendar() {
       : events
           .filter(
             (calendarEvent) =>
-              calendarEvent.date === formatDateKey(selectedDate),
+              calendarEvent.date === formatDateKey(selectedDate) &&
+              visibleCalendarIds.includes(calendarEvent.calendarId),
           )
-          .sort((a, b) => a.startTime.localeCompare(b.startTime));
+          .sort((a, b) =>
+            a.startTime.localeCompare(b.startTime),
+          );
 
   function getCalendarById(calendarId: string) {
     return (
@@ -244,7 +230,11 @@ export function Calendar() {
             );
 
             const dayEvents = events
-              .filter((event) => event.date === dateKey)
+              .filter(
+                (event) =>
+                  event.date === dateKey &&
+                  visibleCalendarIds.includes(event.calendarId),
+              )
               .sort((a, b) => a.startTime.localeCompare(b.startTime))
               .map((event) => {
                 const calendar = getCalendarById(event.calendarId);
