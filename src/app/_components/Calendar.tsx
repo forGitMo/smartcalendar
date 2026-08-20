@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { CalendarDay } from "./CalendarDay";
 import { CalendarEventItem } from "./CalendarEventItem";
-import { calendars } from "./calendarData";
+import type { CalendarCategory } from "./calendarData";
 
 type CalendarEvent = {
   id: number;
@@ -15,10 +15,12 @@ type CalendarEvent = {
 };
 
 type CalendarProps = {
+  calendars: CalendarCategory[];
   visibleCalendarIds: string[];
 };
 
 export function Calendar({
+  calendars,
   visibleCalendarIds,
 }: CalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
