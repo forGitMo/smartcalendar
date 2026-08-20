@@ -1,5 +1,5 @@
 import { Sidebar } from "./_components/Sidebar";
-import { Calendar } from "./_components/Calender";
+import { Calendar } from "./_components/Calendar";
 
 export default function Home() {
   return (

@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { CalendarDay } from "./CalendarDay";
+
 
 export function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -52,6 +55,10 @@ export function Calendar() {
 
   function goToToday() {
     setCurrentDate(new Date());
+  }
+
+  function selectDay(day: number) {
+    setSelectedDate(new Date(year, month, day));
   }
 
   const today = new Date();
@@ -111,30 +118,46 @@ export function Calendar() {
                 />
               );
             }
+
             const isToday =
-            day === today.getDate() &&
-            month === today.getMonth() &&
-            year === today.getFullYear();
+              day === today.getDate() &&
+              month === today.getMonth() &&
+              year === today.getFullYear();
+
+            const isSelected =
+              selectedDate !== null &&
+              day === selectedDate.getDate() &&
+              month === selectedDate.getMonth() &&
+              year === selectedDate.getFullYear();
 
             return (
-              <div
+              <CalendarDay
                 key={day}
-                className={`min-h-28 border-b border-r border-gray-100 p-3 ${isToday ? 'bg-blue-100 text-white' : ''}`}
-              >
-                <span
-                  className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
-                    isToday
-                      ? "bg-gray-900 text-white"
-                      : "text-gray-700"
-                  }`}
-                >
-                  {day}
-                </span>
-              </div>
+                day={day}
+                isToday={isToday}
+                isSelected={isSelected}
+                onSelect={() => selectDay(day)}
+              />
             );
           })}
         </div>
       </div>
+      {selectedDate && (
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
+          <p className="text-sm text-gray-500">
+            Ausgewählter Tag
+          </p>
+
+          <p className="mt-1 text-lg font-semibold text-gray-900">
+            {selectedDate.toLocaleDateString("de-DE", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
