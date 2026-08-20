@@ -1,12 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { CalendarDay } from "./CalendarDay";
+import { CalendarEventItem } from "./CalendarEventItem";
+
+type CalendarEvent = {
+  id: number;
+  title: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+};
 
 
 export function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [newEventTitle, setNewEventTitle] = useState("");
+  const [newEventStartTime, setNewEventStartTime] = useState("09:00");
+  const [newEventEndTime, setNewEventEndTime] = useState("10:00");
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -18,20 +31,28 @@ export function Calendar() {
   const weekDays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
   const calendarDays = Array.from(
-  { length: firstDayMondayBased + daysInMonth },
-  (_, index) => {
-    if (index < firstDayMondayBased) {
-      return null;
-    }
+    { length: firstDayMondayBased + daysInMonth },
+    (_, index) => {
+      if (index < firstDayMondayBased) {
+        return null;
+      }
 
-    return index - firstDayMondayBased + 1;
-  },
-);
+      return index - firstDayMondayBased + 1;
+    },
+  );
 
   const monthName = currentDate.toLocaleDateString("de-DE", {
     month: "long",
     year: "numeric",
   });
+
+  function formatDateKey(date: Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  }
 
   function goToPreviousMonth() {
     setCurrentDate(
@@ -61,7 +82,61 @@ export function Calendar() {
     setSelectedDate(new Date(year, month, day));
   }
 
+  function addEvent(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (selectedDate === null) {
+      return;
+    }
+
+    if (newEventTitle.trim() === "") {
+      return;
+    }
+
+    if (newEventEndTime <= newEventStartTime) {
+      return;
+    }
+
+    const newEvent: CalendarEvent = {
+      id: Date.now(),
+      title: newEventTitle.trim(),
+      date: formatDateKey(selectedDate),
+      startTime: newEventStartTime,
+      endTime: newEventEndTime,
+    };
+
+    setEvents((currentEvents) => [...currentEvents, newEvent]);
+
+    setNewEventTitle("");
+  }
+
+  function deleteEvent(id: number) {
+    setEvents((currentEvents) =>
+      currentEvents.filter((calendarEvent) => calendarEvent.id !== id),
+    );
+  }
+
+  function renameEvent(id: number, newTitle: string) {
+    setEvents((currentEvents) =>
+      currentEvents.map((calendarEvent) =>
+        calendarEvent.id === id
+          ? { ...calendarEvent, title: newTitle }
+          : calendarEvent,
+      ),
+    );
+  }
+
   const today = new Date();
+
+  const selectedEvents =
+    selectedDate === null
+      ? []
+      : events
+          .filter(
+            (calendarEvent) =>
+              calendarEvent.date === formatDateKey(selectedDate),
+          )
+          .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
   return (
     <div>
@@ -130,12 +205,25 @@ export function Calendar() {
               month === selectedDate.getMonth() &&
               year === selectedDate.getFullYear();
 
+            const dateKey = formatDateKey(
+              new Date(year, month, day),
+            );
+
+            const eventTitles = events
+              .filter((event) => event.date === dateKey)
+              .sort((a, b) => a.startTime.localeCompare(b.startTime))
+              .map(
+                (event) =>
+                  `${event.startTime} ${event.title}`,
+              );
+
             return (
               <CalendarDay
                 key={day}
                 day={day}
                 isToday={isToday}
                 isSelected={isSelected}
+                eventTitles={eventTitles}
                 onSelect={() => selectDay(day)}
               />
             );
@@ -156,7 +244,98 @@ export function Calendar() {
               year: "numeric",
             })}
           </p>
-        </div>
+          <div className="mt-5">
+            <h3 className="mb-3 font-semibold text-gray-900">
+              Termine
+            </h3>
+
+            {selectedEvents.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                Für diesen Tag gibt es noch keine Termine.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {selectedEvents.map((calendarEvent) => (
+                  <CalendarEventItem
+                    key={calendarEvent.id}
+                    title={calendarEvent.title}
+                    startTime={calendarEvent.startTime}
+                    endTime={calendarEvent.endTime}
+                    onRename={(newTitle) =>
+                      renameEvent(calendarEvent.id, newTitle)
+                    }
+                    onDelete={() => deleteEvent(calendarEvent.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+          <form
+            onSubmit={addEvent}
+            className="mt-5 space-y-4"
+          >
+            <div>
+              <label
+                htmlFor="event-title"
+                className="mb-1 block text-sm font-medium text-gray-700"
+              >
+                Titel
+              </label>
+
+              <input
+                id="event-title"
+                type="text"
+                value={newEventTitle}
+                onChange={(event) => setNewEventTitle(event.target.value)}
+                placeholder="z. B. Vorlesung"
+                className="w-full rounded-lg border border-gray-200 px-4 py-2 outline-none focus:border-gray-400"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="event-start"
+                  className="mb-1 block text-sm font-medium text-gray-700"
+                >
+                  Beginn
+                </label>
+
+                <input
+                  id="event-start"
+                  type="time"
+                  value={newEventStartTime}
+                  onChange={(event) => setNewEventStartTime(event.target.value)}
+                  className="w-full rounded-lg border border-gray-200 px-4 py-2 outline-none focus:border-gray-400"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="event-end"
+                  className="mb-1 block text-sm font-medium text-gray-700"
+                >
+                  Ende
+                </label>
+
+                <input
+                  id="event-end"
+                  type="time"
+                  value={newEventEndTime}
+                  onChange={(event) => setNewEventEndTime(event.target.value)}
+                  className="w-full rounded-lg border border-gray-200 px-4 py-2 outline-none focus:border-gray-400"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="rounded-lg bg-gray-900 px-5 py-2 font-medium text-white hover:bg-gray-800"
+            >
+              Termin hinzufügen
+            </button>
+          </form>
+        </div> 
       )}
     </div>
   );

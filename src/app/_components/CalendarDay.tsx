@@ -2,6 +2,7 @@ type CalendarDayProps = {
   day: number;
   isToday: boolean;
   isSelected: boolean;
+  eventTitles: string[];
   onSelect: () => void;
 };
 
@@ -9,6 +10,7 @@ export function CalendarDay({
   day,
   isToday,
   isSelected,
+  eventTitles,
   onSelect,
 }: CalendarDayProps) {
   return (
@@ -27,6 +29,16 @@ export function CalendarDay({
       >
         {day}
       </span>
+      <div className="mt-2 space-y-1">
+        {eventTitles.map((title, index) => (
+          <div
+          key={`${title}-${index}`}
+          className="truncate rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700"
+          >
+              {title}
+          </div>
+        ))}
+      </div>
     </button>
   );
 }
